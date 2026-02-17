@@ -41,14 +41,10 @@ taskflow:
 
         {{ result.issue_notes }}
 
-        ## Known Security Advisories for this Repository
-        
-        Fetch the security advisories for {{ globals.repo }} from memcache (stored under the key 'security_advisories_{{ globals.repo }}'). If the value in the memcache is null, clearly state so. Otherwise, state how many advisories were found.
-        Review these advisories and consider them when identifying security risks. If you identify code that is an actual vulnerability with similar pattern to a known advisory, highlight that connection.
+        {% include 'seclab_taskflows.prompts.audit.known_security_advisories' %}
 
         {% include 'seclab_taskflows.prompts.audit.audit_issue' %}
       toolboxes:
         - seclab_taskflows.toolboxes.repo_context
         - seclab_taskflows.toolboxes.local_file_viewer
         - seclab_taskflow_agent.toolboxes.memcache
-        - seclab_taskflows.toolboxes.ghsa
