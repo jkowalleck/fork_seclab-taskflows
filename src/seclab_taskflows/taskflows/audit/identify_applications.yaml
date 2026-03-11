@@ -225,13 +225,3 @@ taskflow:
       toolboxes:
         - seclab_taskflows.toolboxes.gh_file_viewer
         - seclab_taskflows.toolboxes.repo_context
-  - task:
-      must_complete: true
-      agents:
-        - seclab_taskflows.personalities.web_application_security_expert
-      model: code_analysis
-      user_prompt: |
-        Fetch the entry points of the repo {{ globals.repo }} and give a summary of the notes. 
-        Fetch the user actions of the repo {{ globals.repo }} and give a summary of the notes.
-      toolboxes:
-        - seclab_taskflows.toolboxes.repo_context

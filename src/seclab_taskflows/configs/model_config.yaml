@@ -12,4 +12,4 @@ model_settings:
   code_analysis:
     temperature: 1
     reasoning:
-      effort: high
+      effort: medium

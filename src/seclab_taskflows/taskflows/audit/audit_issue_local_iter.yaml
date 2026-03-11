@@ -25,7 +25,7 @@ taskflow:
       must_complete: false
       max_steps: 100
       repeat_prompt: true
-      async: false
+      async: true
       agents:
         - seclab_taskflows.personalities.web_application_security_expert
       model: code_analysis
