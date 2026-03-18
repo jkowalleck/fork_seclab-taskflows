@@ -189,6 +189,107 @@ class TestStopContainer:
 
 
 # ---------------------------------------------------------------------------
+# Persistent container tests
+# ---------------------------------------------------------------------------
+
+class TestPersistentContainer:
+    def setup_method(self):
+        _reset_container()
+
+    def test_persistent_name_uses_hash(self):
+        with patch.object(cs_mod, "CONTAINER_IMAGE", "myregistry.io/org/image:v1.2.3"):
+            with patch.object(cs_mod, "CONTAINER_PERSIST_KEY", ""):
+                name = cs_mod._persistent_name()
+                assert name.startswith("seclab-persist-")
+                assert len(name) == len("seclab-persist-") + 12
+
+    def test_persistent_name_varies_with_key(self):
+        with patch.object(cs_mod, "CONTAINER_IMAGE", "test-image:latest"):
+            with patch.object(cs_mod, "CONTAINER_PERSIST_KEY", ""):
+                name_a = cs_mod._persistent_name()
+            with patch.object(cs_mod, "CONTAINER_PERSIST_KEY", "run-42"):
+                name_b = cs_mod._persistent_name()
+            assert name_a != name_b
+
+    def test_persistent_name_differs_for_different_images(self):
+        with patch.object(cs_mod, "CONTAINER_PERSIST_KEY", ""):
+            with patch.object(cs_mod, "CONTAINER_IMAGE", "image-a:latest"):
+                name_a = cs_mod._persistent_name()
+            with patch.object(cs_mod, "CONTAINER_IMAGE", "image-b:latest"):
+                name_b = cs_mod._persistent_name()
+            assert name_a != name_b
+
+    def test_start_reuses_running_persistent_container(self):
+        inspect_proc = _make_proc(
+            returncode=0,
+            stdout='[{"State":{"Running":true}}]',
+        )
+        with (
+            patch.object(cs_mod, "CONTAINER_IMAGE", "test-image:latest"),
+            patch.object(cs_mod, "CONTAINER_WORKSPACE", ""),
+            patch.object(cs_mod, "CONTAINER_PERSIST", True),
+            patch.object(cs_mod, "CONTAINER_PERSIST_KEY", ""),
+            patch("subprocess.run", return_value=inspect_proc) as mock_run,
+        ):
+            name = cs_mod._start_container()
+            assert name.startswith("seclab-persist-")
+            # Only docker inspect should be called, NOT docker run
+            assert mock_run.call_count == 1
+            cmd = mock_run.call_args[0][0]
+            assert cmd == ["docker", "inspect", "--format", "json", name]
+
+    def test_start_persistent_no_rm_flag(self):
+        inspect_proc = _make_proc(
+            returncode=1,
+            stdout="",
+        )
+        rm_proc = _make_proc(returncode=0)
+        run_proc = _make_proc(returncode=0)
+        with (
+            patch.object(cs_mod, "CONTAINER_IMAGE", "test-image:latest"),
+            patch.object(cs_mod, "CONTAINER_WORKSPACE", ""),
+            patch.object(cs_mod, "CONTAINER_PERSIST", True),
+            patch.object(cs_mod, "CONTAINER_PERSIST_KEY", ""),
+            patch("subprocess.run", side_effect=[inspect_proc, rm_proc, run_proc]) as mock_run,
+        ):
+            name = cs_mod._start_container()
+            assert name.startswith("seclab-persist-")
+            # The docker run call is the third one
+            run_cmd = mock_run.call_args_list[2][0][0]
+            assert "--rm" not in run_cmd
+
+    def test_stop_skips_persistent_container(self):
+        cs_mod._container_name = "seclab-persist-abc123"
+        with (
+            patch.object(cs_mod, "CONTAINER_PERSIST", True),
+            patch("subprocess.run") as mock_run,
+        ):
+            cs_mod._stop_container()
+            mock_run.assert_not_called()
+            assert cs_mod._container_name is None
+
+    def test_remove_container_logs_failure(self):
+        with patch("subprocess.run", return_value=_make_proc(returncode=1, stderr="conflict")):
+            with patch.object(cs_mod.logging, "debug") as mock_debug:
+                cs_mod._remove_container("test-name")
+                mock_debug.assert_called_once()
+
+    def test_remove_container_logs_timeout(self):
+        with patch("subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="docker", timeout=30)):
+            with patch.object(cs_mod.logging, "exception") as mock_err:
+                cs_mod._remove_container("test-name")
+                mock_err.assert_called_once()
+
+    def test_is_running_returns_false_on_timeout(self):
+        with patch("subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="docker", timeout=30)):
+            assert cs_mod._is_running("test-name") is False
+
+    def test_is_running_returns_false_on_bad_json(self):
+        with patch("subprocess.run", return_value=_make_proc(returncode=0, stdout="not json")):
+            assert cs_mod._is_running("test-name") is False
+
+
+# ---------------------------------------------------------------------------
 # Toolbox YAML validation
 # ---------------------------------------------------------------------------
 
