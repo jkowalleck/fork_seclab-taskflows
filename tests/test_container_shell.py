@@ -276,7 +276,7 @@ class TestPersistentContainer:
 
     def test_remove_container_logs_timeout(self):
         with patch("subprocess.run", side_effect=subprocess.TimeoutExpired(cmd="docker", timeout=30)):
-            with patch.object(cs_mod.logging, "error") as mock_err:
+            with patch.object(cs_mod.logging, "exception") as mock_err:
                 cs_mod._remove_container("test-name")
                 mock_err.assert_called_once()
 
