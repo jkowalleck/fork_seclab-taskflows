@@ -4,6 +4,7 @@
 import atexit
 import logging
 import os
+import re
 import subprocess
 import uuid
 from typing import Annotated
@@ -26,8 +27,25 @@ _container_name: str | None = None
 CONTAINER_IMAGE = os.environ.get("CONTAINER_IMAGE", "")
 CONTAINER_WORKSPACE = os.environ.get("CONTAINER_WORKSPACE", "")
 CONTAINER_TIMEOUT = int(os.environ.get("CONTAINER_TIMEOUT", "30"))
+CONTAINER_PERSIST = os.environ.get("CONTAINER_PERSIST", "").lower() in ("1", "true", "yes")
 
 _DEFAULT_WORKDIR = "/workspace"
+
+
+def _persistent_name() -> str:
+    """Derive a deterministic container name from the image for reuse across tasks."""
+    slug = re.sub(r"[^a-zA-Z0-9]", "-", CONTAINER_IMAGE).strip("-")[:40]
+    return f"seclab-persist-{slug}"
+
+
+def _is_running(name: str) -> bool:
+    """Check if a container with the given name is already running."""
+    result = subprocess.run(
+        ["docker", "inspect", "-f", "{{.State.Running}}", name],
+        capture_output=True,
+        text=True,
+    )
+    return result.returncode == 0 and result.stdout.strip() == "true"
 
 
 def _start_container() -> str:
@@ -38,8 +56,24 @@ def _start_container() -> str:
     if CONTAINER_WORKSPACE and ":" in CONTAINER_WORKSPACE:
         msg = f"CONTAINER_WORKSPACE must not contain a colon: {CONTAINER_WORKSPACE!r}"
         raise RuntimeError(msg)
-    name = f"seclab-shell-{uuid.uuid4().hex[:8]}"
-    cmd = ["docker", "run", "-d", "--rm", "--name", name]
+
+    if CONTAINER_PERSIST:
+        name = _persistent_name()
+        if _is_running(name):
+            logging.debug(f"Reusing persistent container: {name}")
+            return name
+        # Remove stopped leftover with the same name (ignore errors)
+        subprocess.run(
+            ["docker", "rm", "-f", name],
+            capture_output=True,
+            text=True,
+        )
+    else:
+        name = f"seclab-shell-{uuid.uuid4().hex[:8]}"
+
+    cmd = ["docker", "run", "-d", "--name", name]
+    if not CONTAINER_PERSIST:
+        cmd.append("--rm")
     if CONTAINER_WORKSPACE:
         cmd += ["-v", f"{CONTAINER_WORKSPACE}:/workspace"]
     cmd += [CONTAINER_IMAGE, "tail", "-f", "/dev/null"]
@@ -48,14 +82,18 @@ def _start_container() -> str:
     if result.returncode != 0:
         msg = f"docker run failed: {result.stderr.strip()}"
         raise RuntimeError(msg)
-    logging.debug(f"Container started: {name}")
+    logging.debug(f"Container started: {name} (persist={CONTAINER_PERSIST})")
     return name
 
 
 def _stop_container() -> None:
-    """Stop the running container."""
+    """Stop the running container (skipped for persistent containers)."""
     global _container_name
     if _container_name is None:
+        return
+    if CONTAINER_PERSIST:
+        logging.debug(f"Leaving persistent container running: {_container_name}")
+        _container_name = None
         return
     logging.debug(f"Stopping container: {_container_name}")
     result = subprocess.run(

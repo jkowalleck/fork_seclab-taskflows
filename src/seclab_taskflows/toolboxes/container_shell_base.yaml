@@ -13,6 +13,7 @@ server_params:
     CONTAINER_IMAGE: "seclab-shell-base:latest"
     CONTAINER_WORKSPACE: "{{ env('CONTAINER_WORKSPACE', required=False) }}"
     CONTAINER_TIMEOUT: "{{ env('CONTAINER_TIMEOUT', '30') }}"
+    CONTAINER_PERSIST: "{{ env('CONTAINER_PERSIST', required=False) }}"
     LOG_DIR: "{{ env('LOG_DIR') }}"
 
 confirm:
