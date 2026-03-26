@@ -1,3 +1,6 @@
+# SPDX-FileCopyrightText: GitHub, Inc.
+# SPDX-License-Identifier: MIT
+
 import logging
 
 from fastmcp import FastMCP
