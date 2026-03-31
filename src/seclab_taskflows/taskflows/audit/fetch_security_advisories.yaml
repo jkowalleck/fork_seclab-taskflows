@@ -19,18 +19,15 @@ taskflow:
         - seclab_taskflow_agent.personalities.assistant
       model: general_tasks
       user_prompt: |
-        Fetch all GitHub Security Advisories (GHSAs) for the repo {{ globals.repo }}.
+        Fetch and store all GitHub Security Advisories (GHSAs) for the repo {{ globals.repo }}
+        with the return_results option set to true. 
 
-        If an error occurs during fetching, store the error message in memcache under the key 'security_advisories_{{ globals.repo }}'.
+        If an error occurs during fetching, store a GHSASummary with the error message.
         Ensure the error message starts with "Error:" followed by a description of the error.
 
-        If fetching is successful, store the list of advisories in memcache under the key 'security_advisories_{{ globals.repo }}'.
-
-        If one or more advisories are found, provide a summary of the findings including:
-        1. How many advisories were found
-        2. The severity levels of the advisories
+        If one or more advisories are found, provide a summary of the findings including.
+        The ghsa_id of each advisory, followed by the severity and type of vulnerability, together with the location of the vulnerable code if available.
+        and store it in a GHSASummary entry in the database.
       toolboxes:
         - seclab_taskflows.toolboxes.ghsa
-        - seclab_taskflow_agent.toolboxes.memcache
         - seclab_taskflows.toolboxes.local_file_viewer
-        - seclab_taskflows.toolboxes.gh_file_viewer
