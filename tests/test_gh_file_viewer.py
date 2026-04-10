@@ -3,8 +3,10 @@
 
 import json
 import os
+import tempfile
 import zipfile
 from io import BytesIO
+from pathlib import Path
 from unittest.mock import AsyncMock, MagicMock, patch
 
 import httpx
@@ -309,8 +311,7 @@ class TestSearchRepoFromGh:
 
         async def fake_fetch_source_zip(owner, repo, tmp_dir):
             os.makedirs(f"{tmp_dir}/{owner}", exist_ok=True)
-            with open(f"{tmp_dir}/{owner}/{repo}.zip", "wb") as f:
-                f.write(zip_bytes)
+            Path(f"{tmp_dir}/{owner}/{repo}.zip").write_bytes(zip_bytes)
             return "source code fetched"
 
         with patch.object(gfv_mod, "_fetch_source_zip", side_effect=fake_fetch_source_zip):
@@ -329,8 +330,7 @@ class TestSearchRepoFromGh:
 
         async def fake_fetch_source_zip(owner, repo, tmp_dir):
             os.makedirs(f"{tmp_dir}/{owner}", exist_ok=True)
-            with open(f"{tmp_dir}/{owner}/{repo}.zip", "wb") as f:
-                f.write(zip_bytes)
+            Path(f"{tmp_dir}/{owner}/{repo}.zip").write_bytes(zip_bytes)
             return "source code fetched"
 
         with patch.object(gfv_mod, "_fetch_source_zip", side_effect=fake_fetch_source_zip):
@@ -368,7 +368,6 @@ class TestHelpers:
             "main.py": "import os\nimport sys\nprint('hello')\n",
             "utils.py": "def helper(): pass\n",
         })
-        import tempfile
         with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as f:
             f.write(zip_bytes)
             f.flush()
