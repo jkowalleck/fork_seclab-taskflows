@@ -57,7 +57,7 @@ engine = create_engine(f"sqlite:///{os.path.abspath(SEARCH_RESULT_DIR)}/search_r
 try:
     Base.metadata.create_all(engine, tables=[SearchResults.__table__])
 except Exception as e:
-    logging.exception(f"Database already exists: {e}") # only log here, as this error likely only happens in test 
+    logging.exception(f"Database already exists") # only log here, as this error likely only happens in test 
 
 
 async def call_api(url: str, params: dict) -> str:
