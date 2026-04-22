@@ -1,0 +1,25 @@
+# SPDX-FileCopyrightText: Jan Kowalleck
+# SPDX-License-Identifier: MIT
+
+## run via: python -m seclab_taskflow_agent -t seclab_taskflows.taskflows.audit.sosf_workshop.sloppiness_analyzer -g repo=github/exiv2 -g issue_number=3454 
+
+seclab-taskflow-agent:
+  filetype: taskflow
+  version: "1.0"
+model_config: seclab_taskflows.configs.model_config
+
+globals:
+  repo: outline/outline
+  id: 1
+# Taskflow to audit some potential issues.
+taskflow:
+  - task:
+      must_complete: true
+      agents:
+        - seclab_taskflows.personalities.web_application_security_expert
+      model: code_analysis
+      user_prompt: |
+        fetch the details of issue number {{ globals.issue_number }} of the repo {{ globals.repo }}.
+        Analyze the issue title and description to describe wether this sissyue is likely to be AI slop.
+      toolboxes:
+        - seclab_taskflows_agents.toolboxes.github_official
