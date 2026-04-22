@@ -90,43 +90,6 @@ async def get_authenticated_user() -> str:
         return resp
     return _json_response(resp)
 
-
-@mcp.tool()
-async def update_authenticated_user(
-    name: str = Field(default="", description="The new name of the user"),
-    email: str = Field(default="", description="Publicly visible email address"),
-    blog: str = Field(default="", description="Blog URL"),
-    twitter_username: str = Field(default="", description="Twitter username"),
-    company: str = Field(default="", description="Company"),
-    location: str = Field(default="", description="Location"),
-    hireable: bool | None = Field(default=None, description="Hireable status"),
-    bio: str = Field(default="", description="Short bio"),
-) -> str:
-    """Update the authenticated user."""
-    payload = {}
-    if name:
-        payload["name"] = name
-    if email:
-        payload["email"] = email
-    if blog:
-        payload["blog"] = blog
-    if twitter_username:
-        payload["twitter_username"] = twitter_username
-    if company:
-        payload["company"] = company
-    if location:
-        payload["location"] = location
-    if hireable is not None:
-        payload["hireable"] = hireable
-    if bio:
-        payload["bio"] = bio
-
-    resp = await _request("PATCH", "https://api.github.com/user", payload=payload)
-    if isinstance(resp, str):
-        return resp
-    return _json_response(resp)
-
-
 @mcp.tool()
 async def list_users(
     since: int = Field(default=0, description="User ID to start from"),
