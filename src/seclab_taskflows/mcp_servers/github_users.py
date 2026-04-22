@@ -251,25 +251,6 @@ async def check_user_follows_another_user(
         return resp
     return "Follows"
 
-
-@mcp.tool()
-async def follow_user(username: str = Field(description="The handle for the GitHub user account")) -> str:
-    """Follow a user."""
-    resp = await _request("PUT", f"https://api.github.com/user/following/{username}")
-    if isinstance(resp, str):
-        return resp
-    return "Followed user"
-
-
-@mcp.tool()
-async def unfollow_user(username: str = Field(description="The handle for the GitHub user account")) -> str:
-    """Unfollow a user."""
-    resp = await _request("DELETE", f"https://api.github.com/user/following/{username}")
-    if isinstance(resp, str):
-        return resp
-    return "Unfollowed user"
-
-
 @mcp.tool()
 async def list_gpg_keys_for_authenticated_user(
     per_page: int = Field(default=30, description="Results per page"),
@@ -290,44 +271,6 @@ async def list_gpg_keys_for_authenticated_user(
         return resp
     return _json_response(resp)
 
-
-@mcp.tool()
-async def create_gpg_key_for_authenticated_user(
-    armored_public_key: str = Field(description="ASCII-armored GPG public key"),
-) -> str:
-    """Create a GPG key for the authenticated user."""
-    resp = await _request(
-        "POST",
-        "https://api.github.com/user/gpg_keys",
-        payload={"armored_public_key": armored_public_key},
-    )
-    if isinstance(resp, str):
-        return resp
-    return _json_response(resp)
-
-
-@mcp.tool()
-async def get_gpg_key_for_authenticated_user(
-    gpg_key_id: int = Field(description="The unique identifier of the GPG key")
-) -> str:
-    """Get a GPG key for the authenticated user."""
-    resp = await _request("GET", f"https://api.github.com/user/gpg_keys/{gpg_key_id}")
-    if isinstance(resp, str):
-        return resp
-    return _json_response(resp)
-
-
-@mcp.tool()
-async def delete_gpg_key_for_authenticated_user(
-    gpg_key_id: int = Field(description="The unique identifier of the GPG key")
-) -> str:
-    """Delete a GPG key for the authenticated user."""
-    resp = await _request("DELETE", f"https://api.github.com/user/gpg_keys/{gpg_key_id}")
-    if isinstance(resp, str):
-        return resp
-    return "Deleted GPG key"
-
-
 @mcp.tool()
 async def list_public_emails_for_authenticated_user(
     per_page: int = Field(default=30, description="Results per page"),
@@ -338,22 +281,6 @@ async def list_public_emails_for_authenticated_user(
     if isinstance(resp, str):
         return resp
     return _json_response(resp)
-
-
-@mcp.tool()
-async def set_primary_email_visibility_for_authenticated_user(
-    visibility: str = Field(description="Email visibility: public or private"),
-) -> str:
-    """Set the primary email visibility for the authenticated user."""
-    resp = await _request(
-        "PATCH",
-        "https://api.github.com/user/email/visibility",
-        payload={"visibility": visibility},
-    )
-    if isinstance(resp, str):
-        return resp
-    return _json_response(resp)
-
 
 @mcp.tool()
 async def list_email_addresses_for_authenticated_user(
@@ -366,27 +293,6 @@ async def list_email_addresses_for_authenticated_user(
         return resp
     return _json_response(resp)
 
-
-@mcp.tool()
-async def add_email_address_for_authenticated_user(
-    emails: list[str] = Field(description="Email addresses to add"),
-) -> str:
-    """Add one or more email addresses for the authenticated user."""
-    resp = await _request("POST", "https://api.github.com/user/emails", payload=emails)
-    if isinstance(resp, str):
-        return resp
-    return _json_response(resp)
-
-
-@mcp.tool()
-async def delete_email_address_for_authenticated_user(
-    emails: list[str] = Field(description="Email addresses to delete"),
-) -> str:
-    """Delete one or more email addresses for the authenticated user."""
-    resp = await _request("DELETE", "https://api.github.com/user/emails", payload=emails)
-    if isinstance(resp, str):
-        return resp
-    return "Deleted email address(es)"
 
 
 @mcp.tool()
@@ -410,17 +316,6 @@ async def list_public_ssh_keys_for_authenticated_user(
     return _json_response(resp)
 
 
-@mcp.tool()
-async def create_public_ssh_key_for_authenticated_user(
-    title: str = Field(description="A descriptive name for the new key"),
-    key: str = Field(description="The public SSH key"),
-) -> str:
-    """Create a public SSH key for the authenticated user."""
-    resp = await _request("POST", "https://api.github.com/user/keys", payload={"title": title, "key": key})
-    if isinstance(resp, str):
-        return resp
-    return _json_response(resp)
-
 
 @mcp.tool()
 async def get_public_ssh_key_for_authenticated_user(
@@ -434,17 +329,6 @@ async def get_public_ssh_key_for_authenticated_user(
 
 
 @mcp.tool()
-async def delete_public_ssh_key_for_authenticated_user(
-    key_id: int = Field(description="The unique identifier of the key"),
-) -> str:
-    """Delete a public SSH key for the authenticated user."""
-    resp = await _request("DELETE", f"https://api.github.com/user/keys/{key_id}")
-    if isinstance(resp, str):
-        return resp
-    return "Deleted public SSH key"
-
-
-@mcp.tool()
 async def list_social_accounts_for_authenticated_user(
     per_page: int = Field(default=30, description="Results per page"),
     page: int = Field(default=1, description="Page number"),
@@ -454,28 +338,6 @@ async def list_social_accounts_for_authenticated_user(
     if isinstance(resp, str):
         return resp
     return _json_response(resp)
-
-
-@mcp.tool()
-async def add_social_accounts_for_authenticated_user(
-    account_urls: list[str] = Field(description="List of social account URLs"),
-) -> str:
-    """Add social accounts for the authenticated user."""
-    resp = await _request("POST", "https://api.github.com/user/social_accounts", payload={"account_urls": account_urls})
-    if isinstance(resp, str):
-        return resp
-    return _json_response(resp)
-
-
-@mcp.tool()
-async def delete_social_accounts_for_authenticated_user(
-    account_urls: list[str] = Field(description="List of social account URLs"),
-) -> str:
-    """Delete social accounts for the authenticated user."""
-    resp = await _request("DELETE", "https://api.github.com/user/social_accounts", payload={"account_urls": account_urls})
-    if isinstance(resp, str):
-        return resp
-    return "Deleted social account(s)"
 
 
 @mcp.tool()
@@ -508,22 +370,6 @@ async def list_ssh_signing_keys_for_authenticated_user(
 
 
 @mcp.tool()
-async def create_ssh_signing_key_for_authenticated_user(
-    title: str = Field(description="A descriptive name for the SSH signing key"),
-    key: str = Field(description="The SSH signing key"),
-) -> str:
-    """Create an SSH signing key for the authenticated user."""
-    resp = await _request(
-        "POST",
-        "https://api.github.com/user/ssh_signing_keys",
-        payload={"title": title, "key": key},
-    )
-    if isinstance(resp, str):
-        return resp
-    return _json_response(resp)
-
-
-@mcp.tool()
 async def get_ssh_signing_key_for_authenticated_user(
     ssh_signing_key_id: int = Field(description="The unique identifier of the SSH signing key"),
 ) -> str:
@@ -533,16 +379,6 @@ async def get_ssh_signing_key_for_authenticated_user(
         return resp
     return _json_response(resp)
 
-
-@mcp.tool()
-async def delete_ssh_signing_key_for_authenticated_user(
-    ssh_signing_key_id: int = Field(description="The unique identifier of the SSH signing key"),
-) -> str:
-    """Delete an SSH signing key for the authenticated user."""
-    resp = await _request("DELETE", f"https://api.github.com/user/ssh_signing_keys/{ssh_signing_key_id}")
-    if isinstance(resp, str):
-        return resp
-    return "Deleted SSH signing key"
 
 
 @mcp.tool()
